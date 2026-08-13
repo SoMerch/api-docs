@@ -1,8 +1,10 @@
 # Orders
 
-This document describes planned order-related API concepts for the SoMerch platform.
+This document describes order-related API concepts for the SoMerch platform.
 
 The order lifecycle connects quote requests, production, approval, inventory, fulfillment, and shipment tracking.
+
+> **Live API:** See the [OpenAPI spec](https://somerch.co/api/public/openapi.json) and [integration docs](https://somerch.co/docs/integrations) for the current REST API endpoints. The concepts below describe the planned domain model.
 
 ---
 

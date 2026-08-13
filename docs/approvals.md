@@ -1,14 +1,10 @@
-
----
-
-# `docs/approvals.md`
-
-```md
 # Approvals
 
-This document describes planned approval-related API concepts for the SoMerch platform.
+This document describes approval-related API concepts for the SoMerch platform.
 
 Approval workflows help teams control budgets, review orders, and keep procurement-friendly records.
+
+> **Live API:** See the [OpenAPI spec](https://somerch.co/api/public/openapi.json) and [integration docs](https://somerch.co/docs/integrations) for the current REST API endpoints. The concepts below describe the planned domain model.
 
 ---
 
@@ -36,3 +32,4 @@ Approval workflows help teams control budgets, review orders, and keep procureme
   "budget_tag": "HR-Onboarding-2026",
   "requested_at": "2026-06-05T10:00:00Z"
 }
+```

@@ -1,14 +1,10 @@
-
----
-
-# `docs/inventory.md`
-
-```md
 # Inventory
 
-This document describes planned inventory-related API concepts for the SoMerch platform.
+This document describes inventory-related API concepts for the SoMerch platform.
 
 Inventory visibility is important for teams that store merch, reorder frequently, or ship items to multiple locations.
+
+> **Live API:** See the [OpenAPI spec](https://somerch.co/api/public/openapi.json) and [integration docs](https://somerch.co/docs/integrations) for the current REST API endpoints. The concepts below describe the planned domain model.
 
 ---
 
@@ -39,3 +35,4 @@ Inventory visibility is important for teams that store merch, reorder frequently
   "low_stock_threshold": 50,
   "updated_at": "2026-06-05T10:00:00Z"
 }
+```

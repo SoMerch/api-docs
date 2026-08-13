@@ -4,17 +4,42 @@ Developer-oriented documentation for the SoMerch platform.
 
 SoMerch is a software-powered corporate merch platform and service partner for distributed companies across Europe. The platform connects product curation, order management, inventory visibility, warehousing, approvals, fulfillment, and EU-wide shipping.
 
-This repository documents planned and developer-facing API concepts for SoMerch.
+This repository documents SoMerch's API concepts, as well as the live public MCP server and REST API.
 
 ---
 
 ## Status
 
-The SoMerch API is currently in developer preview.
+SoMerch offers both a **public MCP server** and a **public REST API** that are live and available for integration.
 
-The documentation in this repository describes platform concepts, planned API resources, webhook events, and example data structures. Public API access may not be available for all customers yet.
+| Resource | Endpoint | Status |
+|---|---|---|
+| Public MCP server | `somerch.co/mcp` | **Live** |
+| MCP server card | `somerch.co/.well-known/mcp/server-card.json` | **Live** |
+| Agent skills discovery | `somerch.co/.well-known/agent-skills/` | **Live** |
+| REST API OpenAPI spec | `somerch.co/api/public/openapi.json` | **Live** |
+| REST API base | `somerch.co/api/public/v1/` | **Live** |
+| Integration docs | `somerch.co/docs/integrations` | **Live** |
 
-For integration requests, please contact the SoMerch team directly.
+The documentation in this repository describes platform concepts, planned API resources, webhook events, and example data structures. For the full OpenAPI specification and live integration docs, visit the links above.
+
+For integration requests, contact the SoMerch team through [somerch.co](https://somerch.co).
+
+---
+
+## Live resources
+
+### MCP server
+
+SoMerch exposes a public MCP (Model Context Protocol) server for AI agent integration. Clients can connect to `somerch.co/mcp` to browse the catalog, discover products, and explore merch data.
+
+See: [`docs/public-mcp.md`](docs/public-mcp.md)
+
+### REST API
+
+SoMerch provides a public REST API at `/api/public/v1/` with OAuth authentication, webhooks, events, jobs, actions, and connections management.
+
+See: [`docs/public-api.md`](docs/public-api.md)
 
 ---
 

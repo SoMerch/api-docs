@@ -1,14 +1,10 @@
-
----
-
-# `docs/shipments.md`
-
-```md
 # Shipments
 
-This document describes planned shipment-related API concepts for the SoMerch platform.
+This document describes shipment-related API concepts for the SoMerch platform.
 
 Shipments represent parcels or delivery groups sent to employees, offices, events, or partners.
+
+> **Live API:** See the [OpenAPI spec](https://somerch.co/api/public/openapi.json) and [integration docs](https://somerch.co/docs/integrations) for the current REST API endpoints. The concepts below describe the planned domain model.
 
 ---
 
@@ -41,3 +37,4 @@ Shipments represent parcels or delivery groups sent to employees, offices, event
   "destination_country": "Germany",
   "created_at": "2026-06-05T10:00:00Z"
 }
+```

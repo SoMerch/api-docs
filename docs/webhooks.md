@@ -6,9 +6,11 @@
 ```md
 # Webhooks
 
-This document describes planned webhook concepts for the SoMerch platform.
+This document describes webhook concepts for the SoMerch platform.
 
 Webhooks allow external systems to receive event notifications when important changes happen in SoMerch.
+
+> **Live API:** SoMerch's REST API includes webhook subscription management and signature verification. See the [OpenAPI spec](https://somerch.co/api/public/openapi.json) and [integration docs](https://somerch.co/docs/integrations).
 
 ---
 
