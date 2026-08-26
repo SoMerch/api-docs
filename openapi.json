@@ -1,0 +1,1501 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SoMerch Integrations API",
+    "version": "1.1.0",
+    "description": "Public REST API for the SoMerch corporate merch platform. This specification documents every endpoint used by the official SoMerch Zapier app (OAuth 2.0, REST-hook triggers, polling triggers, choice/dropdown sources, and the central action dispatcher) as well as the resource and webhook management surface.\n\nBase URL: https://somerch.co\n\nThe machine-readable version of this document is published at https://docs.somerch.co/openapi.json. Developer guides live in the SoMerch api-docs repository: https://github.com/SoMerch/api-docs",
+    "contact": {
+      "name": "SoMerch",
+      "url": "https://somerch.co",
+      "email": "support@somerch.co"
+    },
+    "license": {
+      "name": "Proprietary"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://somerch.co"
+    }
+  ],
+  "tags": [
+    {
+      "name": "OAuth 2.0",
+      "description": "Authorization and token endpoints used to connect an integration (such as the SoMerch Zapier app) to a SoMerch organization."
+    },
+    {
+      "name": "Zapier Triggers",
+      "description": "REST-hook subscription and polling endpoints used by SoMerch Zapier triggers."
+    },
+    {
+      "name": "Zapier Choices",
+      "description": "Dynamic dropdown sources used to populate Zapier input fields."
+    },
+    {
+      "name": "Actions",
+      "description": "The central action dispatcher used by SoMerch Zapier searches and creates."
+    },
+    {
+      "name": "Resources",
+      "description": "Generic integration resources: providers, connections, events, webhooks, jobs, and audit logs."
+    },
+    {
+      "name": "Webhook Delivery",
+      "description": "Outgoing webhook delivery format produced by SoMerch."
+    },
+    {
+      "name": "Incoming Webhooks",
+      "description": "Endpoints SoMerch exposes to receive webhooks from third parties."
+    },
+    {
+      "name": "Discovery",
+      "description": "Health, well-known, discovery, and agent endpoints."
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/oauth/authorize": {
+      "get": {
+        "tags": ["OAuth 2.0"],
+        "summary": "OAuth 2.0 authorization (consent) endpoint",
+        "description": "Browser endpoint that renders the SoMerch consent screen. Callers redirect the user here with the standard authorization code parameters (PKCE optional but recommended). On approval SoMerch issues a single-use code and redirects back to `redirect_uri` with `code` and `state`. Returns an HTML page, not JSON.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "The OAuth client id registered for the integration."
+          },
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "uri" },
+            "description": "URI the user is redirected back to after approval or denial."
+          },
+          {
+            "name": "response_type",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "default": "code", "enum": ["code"] }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Space-delimited scopes requested (for example `orders:read catalog:read webhooks:write`)."
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Opaque value echoed back in the redirect for CSRF protection."
+          },
+          {
+            "name": "code_challenge",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "PKCE S256 challenge (recommended)."
+          },
+          {
+            "name": "code_challenge_method",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "default": "S256", "enum": ["S256"] }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to `redirect_uri` with `code` and `state` after consent, or with `error=access_denied` on denial."
+          },
+          "400": {
+            "description": "Invalid request (missing client_id or redirect_uri, unsupported response_type)."
+          }
+        }
+      }
+    },
+    "/api/public/v1/oauth2/token": {
+      "post": {
+        "tags": ["OAuth 2.0"],
+        "summary": "OAuth 2.0 token endpoint",
+        "description": "Exchanges an authorization code for tokens or refreshes existing tokens. Supports `authorization_code` and `refresh_token` grants. Client credentials may be sent in the body or via HTTP Basic auth. Responses follow RFC 6749. Access tokens are valid for 8 hours; refresh tokens for 90 days and rotate on every use.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TokenRequest" },
+              "examples": {
+                "authorization_code": {
+                  "summary": "Authorization code grant",
+                  "value": {
+                    "grant_type": "authorization_code",
+                    "code": "single-use-code",
+                    "redirect_uri": "https://zapier.com/dashboard/auth/oauth/return/AppXXXXXCLIAPI/",
+                    "client_id": "your-client-id",
+                    "client_secret": "your-client-secret",
+                    "code_verifier": "pkce-verifier"
+                  }
+                },
+                "refresh_token": {
+                  "summary": "Refresh token grant",
+                  "value": {
+                    "grant_type": "refresh_token",
+                    "refresh_token": "rotating-refresh-token",
+                    "client_id": "your-client-id",
+                    "client_secret": "your-client-secret"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens issued.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/TokenResponse" } }
+            }
+          },
+          "400": {
+            "description": "Invalid request (missing field, bad code or refresh token).",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/OAuthError" } }
+            }
+          },
+          "401": {
+            "description": "Invalid or missing client credentials.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/OAuthError" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/oauth2/revoke": {
+      "post": {
+        "tags": ["OAuth 2.0"],
+        "summary": "Revoke an access or refresh token (RFC 7009)",
+        "description": "Revokes a token so it can no longer be used. Always returns 200 for a well-formed request, even when the token is already unknown or revoked. Zapier calls this when a connection is deleted.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RevokeRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token revoked (or already unknown)."
+          },
+          "400": {
+            "description": "Missing token or invalid client.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/OAuthError" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/me": {
+      "get": {
+        "tags": ["OAuth 2.0"],
+        "summary": "Current connection identity and label",
+        "description": "Returns the organization and (when present) user the token resolves to, the scopes granted to the token, and a human label. Zapier calls this right after the OAuth handshake to label the connection and to verify the token is still valid.",
+        "responses": {
+          "200": {
+            "description": "Connection identity.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/MeResponse" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/providers": {
+      "get": {
+        "tags": ["Resources"],
+        "summary": "List integration providers",
+        "description": "Catalog of provider slugs the platform knows about (zapier, chatgpt-mcp, generic-webhook, and so on) with their status and supported integrations.",
+        "parameters": [
+          {
+            "name": "include_planned",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean", "default": false },
+            "description": "Include providers that are not yet available for installation."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider catalog.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "providers": { "type": "array", "items": { "type": "object" } } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/connections": {
+      "get": {
+        "tags": ["Resources"],
+        "summary": "List integration connections",
+        "description": "Sanitized list of the connection records for the caller's organization. Credential material is never returned.",
+        "responses": {
+          "200": {
+            "description": "List of connections.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "connections": { "type": "array", "items": { "$ref": "#/components/schemas/Connection" } } }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Resources"],
+        "summary": "Create or update an integration connection",
+        "description": "Attach a provider connection stub to the caller's organization. Hosted providers normally connect through the OAuth flow at /oauth/authorize instead.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["provider_slug"],
+                "properties": {
+                  "provider_slug": { "type": "string", "example": "generic-webhook" },
+                  "display_name": { "type": "string" },
+                  "scopes": { "type": "array", "items": { "type": "string" } },
+                  "metadata": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Connection created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "connection": { "$ref": "#/components/schemas/Connection" } }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown provider slug."
+          }
+        }
+      }
+    },
+    "/api/public/v1/connections/{id}": {
+      "get": {
+        "tags": ["Resources"],
+        "summary": "Get a connection",
+        "description": "Fetch a single connection by id, scoped to the caller's organization.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Connection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "connection": { "$ref": "#/components/schemas/Connection" } }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Connection not found."
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Resources"],
+        "summary": "Disconnect a connection",
+        "description": "Soft-disconnects the connection (status becomes `disconnected`, credentials are cleared).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Connection disconnected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "ok": { "type": "boolean" }, "id": { "type": "string" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/events": {
+      "get": {
+        "tags": ["Resources"],
+        "summary": "List integration events",
+        "description": "Filterable event log for the caller's organization. PII is redacted from event payloads before they are returned or delivered.",
+        "parameters": [
+          { "name": "event_type", "in": "query", "schema": { "type": "string" } },
+          { "name": "source", "in": "query", "schema": { "type": "string" } },
+          { "name": "resource_type", "in": "query", "schema": { "type": "string" } },
+          { "name": "resource_id", "in": "query", "schema": { "type": "string" } },
+          { "name": "correlation_id", "in": "query", "schema": { "type": "string" } },
+          { "name": "from", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "to", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 50, "maximum": 200 }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "created_at ISO cursor for pagination (returns older rows)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of events with pagination cursor.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "events": { "type": "array", "items": { "type": "object" } },
+                    "next_cursor": { "type": ["string", "null"] }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/webhooks": {
+      "get": {
+        "tags": ["Resources"],
+        "summary": "List outgoing webhook subscriptions",
+        "description": "List the org's outgoing webhook subscriptions.",
+        "responses": {
+          "200": {
+            "description": "List of subscriptions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "webhooks": { "type": "array", "items": { "$ref": "#/components/schemas/WebhookSubscription" } } }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Resources"],
+        "summary": "Create an outgoing webhook subscription",
+        "description": "Register a URL to receive signed deliveries for the requested event types. The signing secret is returned exactly once, at creation time. The target URL is validated to prevent SSRF.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WebhookCreateRequest" },
+              "example": {
+                "url": "https://hooks.example.com/somerch",
+                "event_types": ["order.created", "order.status_changed"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Subscription created. The `secret` is shown only once.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "webhook": { "$ref": "#/components/schemas/WebhookSubscription" },
+                    "secret": { "type": "string", "example": "whsec_..." }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or unsafe target URL."
+          }
+        }
+      }
+    },
+    "/api/public/v1/webhooks/{id}": {
+      "patch": {
+        "tags": ["Resources"],
+        "summary": "Update a webhook subscription",
+        "description": "Toggle active state or update url / event_types / description of a single webhook, scoped to the caller's organization.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": { "type": "string", "format": "uri" },
+                  "event_types": { "type": "array", "items": { "type": "string" } },
+                  "description": { "type": ["string", "null"] },
+                  "is_active": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Subscription updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "webhook": { "$ref": "#/components/schemas/WebhookSubscription" } }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Webhook not found."
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Resources"],
+        "summary": "Delete a webhook subscription",
+        "description": "Permanently removes a webhook subscription.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subscription deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "ok": { "type": "boolean" } }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Webhook not found."
+          }
+        }
+      }
+    },
+    "/api/public/v1/jobs": {
+      "get": {
+        "tags": ["Resources"],
+        "summary": "List queued integration jobs",
+        "description": "Inspect the org's background jobs (webhook deliveries, retries).",
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string" } },
+          { "name": "job_type", "in": "query", "schema": { "type": "string" } },
+          { "name": "connection_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 50, "maximum": 200 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of jobs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "jobs": { "type": "array", "items": { "type": "object" } } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/audit-logs": {
+      "get": {
+        "tags": ["Resources"],
+        "summary": "List sanitized audit logs",
+        "description": "Cross-provider audit trail for the caller's organization. Credentials, tokens, and PII are redacted server-side.",
+        "parameters": [
+          { "name": "action", "in": "query", "schema": { "type": "string" } },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 50, "maximum": 200 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of audit log entries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "audit_logs": { "type": "array", "items": { "type": "object" } } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/zapier/events": {
+      "get": {
+        "tags": ["Zapier Triggers"],
+        "summary": "Event catalogue for Zapier REST hooks",
+        "description": "Lists the event types a Zapier trigger can subscribe to together with the scope each one requires.",
+        "responses": {
+          "200": {
+            "description": "Event catalogue.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ZapierEventsResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/zapier/subscribe": {
+      "post": {
+        "tags": ["Zapier Triggers"],
+        "summary": "Register a Zapier REST hook",
+        "description": "Registers a hook URL for one event type so SoMerch delivers webhooks to it. Requires `webhooks:write` plus the per-event scope. Returns the hook `id` so Zapier can unsubscribe later. The hook URL is validated to prevent SSRF.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ZapierSubscribeRequest" },
+              "example": {
+                "hookUrl": "https://hooks.zapier.com/hooks/catch/123/abc/",
+                "event_type": "order.status_changed",
+                "description": "Zap 12345 (order.status_changed)"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Hook registered.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ZapierSubscribeResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Unsupported event type, missing URL, or unsafe hook URL."
+          },
+          "403": {
+            "description": "Missing required scope (`webhooks:write` or the per-event scope)."
+          }
+        }
+      }
+    },
+    "/api/public/v1/zapier/unsubscribe/{id}": {
+      "delete": {
+        "tags": ["Zapier Triggers"],
+        "summary": "Remove a Zapier REST hook",
+        "description": "Deletes a hook subscription by id. Zapier calls this when a Zap using a REST-hook trigger is turned off or deleted. A 404 is tolerated and treated as success by Zapier.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subscription removed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "ok": { "type": "boolean" } }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscription not found."
+          }
+        }
+      }
+    },
+    "/api/public/v1/zapier/triggers/orders": {
+      "get": {
+        "tags": ["Zapier Triggers"],
+        "summary": "Poll orders (newest first)",
+        "description": "Polling endpoint used by the Zapier 'New Order' and 'Order Status Changed' triggers as a fallback and for initial import. Returns the caller's organization's orders, newest first, without contact PII. Zapier dedupes on the top-level `id`.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 25, "maximum": 100, "minimum": 1 }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "schema": { "type": "string", "format": "date-time" },
+            "description": "Only return rows created after this ISO timestamp."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Newest-first orders.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "orders": { "type": "array", "items": { "$ref": "#/components/schemas/OrderPollItem" } } }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing `orders:read` scope."
+          }
+        }
+      }
+    },
+    "/api/public/v1/zapier/triggers/shipments": {
+      "get": {
+        "tags": ["Zapier Triggers"],
+        "summary": "Poll shipments (newest first)",
+        "description": "Polling endpoint used by the Zapier 'New Shipment' and 'Shipment Updated' triggers. Returns the caller's organization's shipments (resolved through the orders they belong to), newest first. Zapier dedupes on the top-level `id`.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 25, "maximum": 100, "minimum": 1 }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "schema": { "type": "string", "format": "date-time" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Newest-first shipments.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "shipments": { "type": "array", "items": { "$ref": "#/components/schemas/ShipmentPollItem" } } }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing `shipments:read` scope."
+          }
+        }
+      }
+    },
+    "/api/public/v1/zapier/triggers/quote-requests": {
+      "get": {
+        "tags": ["Zapier Triggers"],
+        "summary": "Poll quote requests (newest first)",
+        "description": "Polling endpoint used by the Zapier 'New Quote Request' trigger. Returns the caller's organization's quote requests, newest first. Contact PII is omitted.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 25, "maximum": 100, "minimum": 1 }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "schema": { "type": "string", "format": "date-time" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Newest-first quote requests.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "quote_requests": { "type": "array", "items": { "$ref": "#/components/schemas/QuoteRequestPollItem" } } }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing `quotes:read` scope."
+          }
+        }
+      }
+    },
+    "/api/public/v1/zapier/choices/categories": {
+      "get": {
+        "tags": ["Zapier Choices"],
+        "summary": "Catalogue category dropdown",
+        "description": "Dynamic dropdown source for product categories used by the Zapier 'Find Products' search. Requires `catalog:read`.",
+        "responses": {
+          "200": {
+            "description": "List of categories.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "categories": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "label": { "type": "string" },
+                          "parent_id": { "type": ["string", "null"] }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/zapier/choices/order-statuses": {
+      "get": {
+        "tags": ["Zapier Choices"],
+        "summary": "Order status dropdown",
+        "description": "Dynamic dropdown source for order statuses used in Zapier filters. Requires `orders:read`.",
+        "responses": {
+          "200": {
+            "description": "List of order statuses.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "order_statuses": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "label": { "type": "string" },
+                          "name": { "type": "string" },
+                          "order_type": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/zapier/choices/organizations": {
+      "get": {
+        "tags": ["Zapier Choices"],
+        "summary": "Organization dropdown",
+        "description": "Returns the organization(s) the connected token can act on. Used for connection labels and read-only display.",
+        "responses": {
+          "200": {
+            "description": "List of organizations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "organizations": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid" },
+                          "label": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/actions": {
+      "get": {
+        "tags": ["Actions"],
+        "summary": "List registered action keys",
+        "description": "Lists every action key the central action dispatcher can invoke.",
+        "responses": {
+          "200": {
+            "description": "List of action keys.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "actions": { "type": "array", "items": { "type": "string" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/actions/{actionKey}": {
+      "post": {
+        "tags": ["Actions"],
+        "summary": "Invoke a SoMerch action",
+        "description": "Universal action dispatcher used by the SoMerch Zapier searches and creates. The body is `{ \"input\": <action input> }`, where the input shape depends on the action key (see `docs/actions.md`). Send an `Idempotency-Key` header to make replays safe (24-hour TTL). Responses use the `ActionResult` envelope: `{ ok, data, error, correlation_id }`.\n\nThe full per-action input and output schemas are documented in `/docs/actions.md` and mirrored as component schemas below.\n\nAvailable actions (SoMerch/Zapier):\n- `system.ping`\n- `orders.list`, `orders.get`\n- `catalog.search_products`, `catalog.get_product`\n- `quotes.submit`\n- `plans.create`",
+        "parameters": [
+          {
+            "name": "actionKey",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "example": "quotes.submit" }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Opaque key. Replays within 24 hours return the original response (with `X-Idempotent-Replay: true`)."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ActionRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Action completed successfully.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ActionResult" } }
+            }
+          },
+          "400": {
+            "description": "Validation error or permanent (non-retryable) action failure.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ActionResult" } }
+            }
+          },
+          "403": {
+            "description": "Missing required scope for the action."
+          },
+          "404": {
+            "description": "Unknown action key."
+          },
+          "502": {
+            "description": "Retryable upstream failure.",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ActionResult" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/webhooks/{providerSlug}/{connectionId}": {
+      "post": {
+        "tags": ["Incoming Webhooks"],
+        "summary": "Receive an incoming provider webhook",
+        "description": "Endpoint SoMerch exposes for third parties to deliver webhooks to. SoMerch verifies the provider signature, normalizes the payload, enqueues a job, and returns a 2xx. Configure this URL on the provider side.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "providerSlug",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "connectionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Webhook accepted."
+          },
+          "400": {
+            "description": "Invalid signature or payload."
+          }
+        }
+      }
+    },
+    "/api/public/cron/dispatch-webhooks": {
+      "post": {
+        "tags": ["Incoming Webhooks"],
+        "summary": "Cron: dispatch pending outgoing webhooks",
+        "description": "Internal, secret-gated cron entry point that drains `integration_webhook_deliveries` with exponential backoff. Not for direct external use.",
+        "security": [],
+        "x-internal": true,
+        "responses": {
+          "200": {
+            "description": "Dispatch run completed."
+          },
+          "401": {
+            "description": "Missing or invalid cron secret."
+          }
+        }
+      }
+    },
+    "/api/public/health/env": {
+      "get": {
+        "tags": ["Discovery"],
+        "summary": "Environment health probe",
+        "description": "Returns booleans and binding origins for each Supabase binding. Never returns secrets. Returns 503 when unhealthy.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "All services healthy."
+          },
+          "503": {
+            "description": "One or more services unhealthy."
+          }
+        }
+      }
+    },
+    "/api/public/openapi.json": {
+      "get": {
+        "tags": ["Discovery"],
+        "summary": "OpenAPI 3.1 specification",
+        "description": "Machine-readable description of this integrations API.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OpenAPI document (JSON)."
+          }
+        }
+      }
+    },
+    "/mcp": {
+      "post": {
+        "tags": ["Discovery"],
+        "summary": "Model Context Protocol server (Streamable HTTP)",
+        "description": "SoMerch's public MCP endpoint used by the ChatGPT plugin and other MCP clients. Discovered via /.well-known/mcp/server-card.json. Unauthenticated; provides catalog, planning, and quote tools.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "MCP JSON-RPC response (may be streamed)."
+          }
+        }
+      }
+    },
+    "/.well-known/mcp/server-card.json": {
+      "get": {
+        "tags": ["Discovery"],
+        "summary": "MCP Server Card (SEP-1649)",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "MCP server card JSON."
+          }
+        }
+      }
+    },
+    "/.well-known/agent-skills/index.json": {
+      "get": {
+        "tags": ["Discovery"],
+        "summary": "Agent Skills discovery index",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Agent skills index JSON."
+          }
+        }
+      }
+    },
+    "/.well-known/openid-configuration": {
+      "get": {
+        "tags": ["Discovery"],
+        "summary": "OpenID Connect discovery document",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OIDC metadata JSON."
+          }
+        }
+      }
+    },
+    "/.well-known/oauth-authorization-server": {
+      "get": {
+        "tags": ["Discovery"],
+        "summary": "OAuth 2.0 authorization server metadata (RFC 8414)",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Authorization server metadata JSON."
+          }
+        }
+      }
+    },
+    "/.well-known/oauth-protected-resource": {
+      "get": {
+        "tags": ["Discovery"],
+        "summary": "OAuth 2.0 protected resource metadata (RFC 9728)",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Protected resource metadata JSON."
+          }
+        }
+      }
+    },
+    "/.well-known/api-catalog": {
+      "get": {
+        "tags": ["Discovery"],
+        "summary": "RFC 9727 API catalog",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Linkset JSON."
+          }
+        }
+      }
+    },
+    "/.well-known/openai-apps-challenge": {
+      "get": {
+        "tags": ["Discovery"],
+        "summary": "OpenAI apps domain verification challenge",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Verification token."
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "OAuth2 access token (sat_), API key (sk_), or Supabase JWT",
+        "description": "Send `Authorization: Bearer <token>`. Tokens are obtained through the OAuth 2.0 flow (scopes below), long-lived org-scoped API keys issued in the SoMerch admin console (prefixed `sk_`), or Supabase-issued user JWT access tokens. Missing or invalid tokens return 401 with a `WWW-Authenticate` header pointing at /.well-known/oauth-protected-resource."
+      },
+      "oauth2": {
+        "type": "oauth2",
+        "description": "Authorization Code grant with optional PKCE. Authorization endpoint: https://somerch.co/oauth/authorize. Token endpoint: https://somerch.co/api/public/v1/oauth2/token. Refresh tokens rotate on every use.",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "https://somerch.co/oauth/authorize",
+            "tokenUrl": "https://somerch.co/api/public/v1/oauth2/token",
+            "refreshUrl": "https://somerch.co/api/public/v1/oauth2/token",
+            "scopes": {
+              "orders:read": "Read your orders and their statuses",
+              "shipments:read": "Read your shipments and tracking updates",
+              "quotes:read": "Read quote requests submitted by your organization",
+              "quotes:write": "Submit new quote requests on your behalf",
+              "catalog:read": "Search the SoMerch product catalogue and pricing",
+              "plans:write": "Create merch project plans",
+              "webhooks:write": "Create and remove webhook subscriptions (needed by Zaps)"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "OAuthError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "enum": ["invalid_request", "invalid_client", "invalid_grant", "unsupported_grant_type", "server_error"]
+          },
+          "error_description": { "type": "string" }
+        }
+      },
+      "TokenRequest": {
+        "type": "object",
+        "required": ["grant_type", "client_id"],
+        "properties": {
+          "grant_type": { "type": "string", "enum": ["authorization_code", "refresh_token"] },
+          "client_id": { "type": "string" },
+          "client_secret": { "type": "string" },
+          "code": { "type": "string", "description": "Required for authorization_code grant." },
+          "redirect_uri": { "type": "string", "format": "uri", "description": "Required for authorization_code grant." },
+          "code_verifier": { "type": "string", "description": "Required when PKCE was used at the authorization endpoint." },
+          "refresh_token": { "type": "string", "description": "Required for refresh_token grant." }
+        }
+      },
+      "TokenResponse": {
+        "type": "object",
+        "required": ["access_token", "token_type", "expires_in", "scope"],
+        "properties": {
+          "access_token": { "type": "string" },
+          "token_type": { "type": "string", "enum": ["Bearer"] },
+          "expires_in": { "type": "integer" },
+          "refresh_token": { "type": "string" },
+          "scope": { "type": "string" }
+        }
+      },
+      "RevokeRequest": {
+        "type": "object",
+        "required": ["token", "client_id"],
+        "properties": {
+          "token": { "type": "string" },
+          "token_type_hint": { "type": "string", "enum": ["access_token", "refresh_token"] },
+          "client_id": { "type": "string" },
+          "client_secret": { "type": "string" }
+        }
+      },
+      "MeResponse": {
+        "type": "object",
+        "properties": {
+          "organization": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "name": { "type": ["string", "null"] }
+            }
+          },
+          "user": {
+            "type": ["object", "null"],
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "email": { "type": ["string", "null"] }
+            }
+          },
+          "auth_mode": { "type": "string" },
+          "client_id": { "type": ["string", "null"] },
+          "scopes": { "type": "array", "items": { "type": "string" } },
+          "label": { "type": "string" }
+        }
+      },
+      "Connection": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "organization_id": { "type": "string", "format": "uuid" },
+          "provider_id": { "type": "string", "format": "uuid" },
+          "status": { "type": "string" },
+          "display_name": { "type": ["string", "null"] },
+          "scopes": { "type": "array", "items": { "type": "string" } },
+          "metadata": { "type": "object" },
+          "connected_by": { "type": ["string", "null"] },
+          "last_verified_at": { "type": ["string", "null"] },
+          "last_error": { "type": ["string", "null"] },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "WebhookCreateRequest": {
+        "type": "object",
+        "required": ["url", "event_types"],
+        "properties": {
+          "url": { "type": "string", "format": "uri", "maxLength": 2048 },
+          "event_types": { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 64 },
+          "description": { "type": "string", "maxLength": 500 },
+          "connection_id": { "type": "string", "format": "uuid" }
+        }
+      },
+      "WebhookSubscription": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "url": { "type": "string" },
+          "event_types": { "type": "array", "items": { "type": "string" } },
+          "description": { "type": ["string", "null"] },
+          "is_active": { "type": "boolean" },
+          "connection_id": { "type": ["string", "null"] },
+          "last_delivery_at": { "type": ["string", "null"] },
+          "last_delivery_status": { "type": ["string", "null"] },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ZapierEventsResponse": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "event_type": {
+                  "type": "string",
+                  "enum": ["order.created", "order.status_changed", "shipment.created", "shipment.updated", "quote.submitted"]
+                },
+                "description": { "type": "string" },
+                "required_scope": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "ZapierSubscribeRequest": {
+        "type": "object",
+        "required": ["event_type"],
+        "properties": {
+          "url": { "type": "string", "format": "uri", "maxLength": 2048 },
+          "hookUrl": { "type": "string", "format": "uri", "maxLength": 2048 },
+          "event_type": {
+            "type": "string",
+            "enum": ["order.created", "order.status_changed", "shipment.created", "shipment.updated", "quote.submitted"]
+          },
+          "description": { "type": "string", "maxLength": 500 }
+        }
+      },
+      "ZapierSubscribeResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "subscription": { "$ref": "#/components/schemas/WebhookSubscription" }
+        }
+      },
+      "OrderPollItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "order_id": { "type": "string", "format": "uuid" },
+          "order_name": { "type": ["string", "null"] },
+          "kind": { "type": "string", "enum": ["order", "request"] },
+          "organization_id": { "type": "string", "format": "uuid" },
+          "status_id": { "type": ["string", "null"] },
+          "status": { "type": ["string", "null"] },
+          "target_date_at": { "type": ["string", "null"] },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ShipmentPollItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "shipment_id": { "type": "string", "format": "uuid" },
+          "shipment_name": { "type": ["string", "null"] },
+          "order_id": { "type": "string", "format": "uuid" },
+          "order_name": { "type": ["string", "null"] },
+          "organization_id": { "type": "string", "format": "uuid" },
+          "carrier_at": { "type": ["string", "null"] },
+          "service_type": { "type": ["string", "null"] },
+          "tracking_number": { "type": ["string", "null"] },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "QuoteRequestPollItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "quote_request_id": { "type": "string", "format": "uuid" },
+          "plan_id": { "type": ["string", "null"] },
+          "selected_option_id": { "type": ["string", "null"] },
+          "company_name": { "type": ["string", "null"] },
+          "quantity": { "type": ["integer", "null"] },
+          "target_budget": { "type": ["number", "null"] },
+          "deadline": { "type": ["string", "null"] },
+          "status": { "type": ["string", "null"] },
+          "source": { "type": ["string", "null"] },
+          "order_id": { "type": ["string", "null"] },
+          "organization_id": { "type": "string", "format": "uuid" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ActionRequest": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "description": "Action-specific input. See the per-action schemas below (SystemPingInput, OrdersListInput, OrdersGetInput, ProductSearchInput, GetProductInput, QuotesSubmitInput, PlansCreateInput).",
+            "oneOf": [
+              { "$ref": "#/components/schemas/SystemPingInput" },
+              { "$ref": "#/components/schemas/OrdersListInput" },
+              { "$ref": "#/components/schemas/OrdersGetInput" },
+              { "$ref": "#/components/schemas/ProductSearchInput" },
+              { "$ref": "#/components/schemas/GetProductInput" },
+              { "$ref": "#/components/schemas/QuotesSubmitInput" },
+              { "$ref": "#/components/schemas/PlansCreateInput" }
+            ]
+          }
+        }
+      },
+      "ActionResult": {
+        "type": "object",
+        "properties": {
+          "ok": { "type": "boolean" },
+          "data": { "type": ["object", "array", "null"] },
+          "error": {
+            "type": ["object", "null"],
+            "properties": {
+              "code": { "type": "string", "example": "validation_error" },
+              "message": { "type": "string" },
+              "retryable": { "type": "boolean" }
+            }
+          },
+          "correlation_id": { "type": "string" }
+        }
+      },
+      "SystemPingInput": {
+        "type": "object",
+        "properties": { "message": { "type": "string", "maxLength": 500 } }
+      },
+      "OrdersListInput": {
+        "type": "object",
+        "properties": {
+          "limit": { "type": "integer", "minimum": 1, "maximum": 200 },
+          "status_id": { "type": "string", "format": "uuid" }
+        }
+      },
+      "OrdersGetInput": {
+        "type": "object",
+        "required": ["id"],
+        "properties": { "id": { "type": "string", "format": "uuid" } }
+      },
+      "ProductSearchInput": {
+        "type": "object",
+        "properties": {
+          "query": { "type": "string", "maxLength": 200 },
+          "categorySlugs": { "type": "array", "items": { "type": "string" }, "maxItems": 10 },
+          "brandSlugs": { "type": "array", "items": { "type": "string" }, "maxItems": 10 },
+          "collectionSlugs": { "type": "array", "items": { "type": "string" }, "maxItems": 10 },
+          "quantity": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+          "maxEstimatedUnitPrice": {
+            "type": "object",
+            "properties": {
+              "amount": { "type": "number", "minimum": 0 },
+              "currency": { "type": "string", "enum": ["EUR"] }
+            }
+          },
+          "excludeApparel": { "type": "boolean" },
+          "limit": { "type": "integer", "minimum": 1, "maximum": 20, "default": 8 },
+          "lang": { "type": "string", "enum": ["en", "de", "fr"] }
+        }
+      },
+      "GetProductInput": {
+        "type": "object",
+        "properties": {
+          "productId": { "type": "string", "format": "uuid" },
+          "slug": { "type": "string" },
+          "lang": { "type": "string", "enum": ["en", "de", "fr"] }
+        }
+      },
+      "QuotesSubmitInput": {
+        "type": "object",
+        "required": ["company_name", "first_name", "email", "consent_terms"],
+        "properties": {
+          "plan_id": { "type": "string", "format": "uuid" },
+          "selected_option_id": { "type": "string", "enum": ["cost_conscious", "balanced", "premium"] },
+          "company_name": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "first_name": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "last_name": { "type": "string", "maxLength": 100, "default": "" },
+          "email": { "type": "string", "format": "email", "maxLength": 320 },
+          "phone": { "type": "string", "maxLength": 60 },
+          "quantity": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+          "target_budget": { "type": "number", "minimum": 0 },
+          "target_date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "note": { "type": "string", "maxLength": 4000 },
+          "newsletter_subscribe": { "type": "boolean" },
+          "consent_terms": { "type": "boolean", "const": true, "description": "Must be true. Personal email addresses are rejected; repeats are idempotent by (plan, option, email)." }
+        }
+      },
+      "PlansCreateInput": {
+        "type": "object",
+        "required": ["goal", "quantity"],
+        "properties": {
+          "goal": { "type": "string", "minLength": 3, "maxLength": 500 },
+          "audience": { "type": "string", "maxLength": 200 },
+          "quantity": { "type": "integer", "minimum": 1, "maximum": 1000000 },
+          "budgetPerUnit": {
+            "type": "object",
+            "properties": {
+              "amount": { "type": "number", "minimum": 0 },
+              "currency": { "type": "string", "enum": ["EUR"] }
+            }
+          },
+          "totalBudget": {
+            "type": "object",
+            "properties": {
+              "amount": { "type": "number", "minimum": 0 },
+              "currency": { "type": "string", "enum": ["EUR"] }
+            }
+          },
+          "deadline": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "categorySlugs": { "type": "array", "items": { "type": "string" }, "maxItems": 10 },
+          "brandSlugs": { "type": "array", "items": { "type": "string" }, "maxItems": 10 },
+          "collectionSlugs": { "type": "array", "items": { "type": "string" }, "maxItems": 10 },
+          "excludeApparel": { "type": "boolean" },
+          "sustainabilityPreference": { "type": "string", "enum": ["required", "preferred", "no_preference"] },
+          "preferredColors": { "type": "array", "items": { "type": "string" }, "maxItems": 10 },
+          "lang": { "type": "string", "enum": ["en", "de", "fr"] }
+        }
+      }
+    }
+  }
+}
