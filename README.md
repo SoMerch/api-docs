@@ -39,6 +39,9 @@ SoMerch is building an integration ecosystem around the tools teams already use.
 | monday.com app | In review |
 | Google Sheets app (Google Workspace Marketplace) | In review |
 | Salesforce | In development |
+| Deel | In development |
+| HubSpot | In development |
+| HiBob | In development |
 
 For the latest status, see [somerch.co/docs/integrations](https://somerch.co/docs/integrations).
 
