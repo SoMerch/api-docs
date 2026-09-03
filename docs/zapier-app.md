@@ -1,6 +1,6 @@
 # Zapier App
 
-SoMerch offers an official **Zapier app** for no-code automation. Connect your SoMerch account with OAuth 2.0 and build zaps that react to merch events and take actions across 8000+ apps.
+SoMerch offers an official **Zapier app** for no-code automation. The app is approved and listed in the [Zapier Marketplace](https://zapier.com/apps/somerch/integrations). Connect your SoMerch account with OAuth 2.0 and build zaps that react to merch events and take actions across 8000+ apps.
 
 The app is built entirely on the SoMerch Integrations API documented in this repository:
 
@@ -54,7 +54,7 @@ Event types available to subscribers of the Zapier app: `order.created`, `order.
 
 ## Getting started
 
-1. In Zapier, search for "SoMerch".
+1. Open the [SoMerch app in the Zapier Marketplace](https://zapier.com/apps/somerch/integrations).
 2. Connect your SoMerch account (OAuth consent).
 3. Choose a trigger, search, or create from the lists above.
 4. For creates such as "Submit Quote Request", make sure `consent_terms` is set to `true` and map the plan reference or plan id.

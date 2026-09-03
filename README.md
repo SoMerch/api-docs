@@ -21,7 +21,7 @@ SoMerch offers a public **MCP server** (including a **ChatGPT plugin**), a **pub
 | Agent skills discovery | `somerch.co/.well-known/agent-skills/` | **Live** |
 | REST API OpenAPI spec | `[openapi.json](openapi.json)` (also `docs.somerch.co/openapi.json`) | **Live** |
 | REST API base | `somerch.co/api/public/v1/` | **Live** |
-| Zapier app | `zapier.com` (SoMerch app) | **Live** |
+| Zapier app | [Zapier Marketplace listing](https://zapier.com/apps/somerch/integrations) | **Live, approved** |
 | Integration docs | `somerch.co/docs/integrations` | **Live** |
 
 The documentation in this repository describes platform concepts, live API resources, webhook events, and example data structures. The complete endpoint reference for the integrations API (used by the Zapier app and custom clients) is:
@@ -52,7 +52,7 @@ See: [`docs/public-api.md`](docs/public-api.md)
 
 ### Zapier app
 
-SoMerch offers an official **Zapier app** for no-code automation. Connect your SoMerch account with OAuth 2.0 and use triggers (new orders, order status changes, new shipments, shipment updates, new quote requests), searches (products, orders), and actions (submit quote requests, create merch plans) to connect merch operations to 8000+ other apps.
+SoMerch offers an official **Zapier app**, approved and listed on the [Zapier Marketplace](https://zapier.com/apps/somerch/integrations), for no-code automation. Connect your SoMerch account with OAuth 2.0 and use triggers (new orders, order status changes, new shipments, shipment updates, new quote requests), searches (products, orders), and actions (submit quote requests, create merch plans) to connect merch operations to 8000+ other apps.
 
 See: [`docs/zapier-app.md`](docs/zapier-app.md)
 
