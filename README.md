@@ -24,6 +24,24 @@ SoMerch offers a public **MCP server** (including a **ChatGPT plugin**), a **pub
 | Zapier app | [Zapier Marketplace listing](https://zapier.com/apps/somerch/integrations) | **Live, approved** |
 | Integration docs | `somerch.co/docs/integrations` | **Live** |
 
+### Integration status
+
+SoMerch is building an integration ecosystem around the tools teams already use. Current status of each integration:
+
+| Integration | Status |
+|---|---|
+| Zapier app | **Live** - approved and listed on the [Zapier Marketplace](https://zapier.com/apps/somerch/integrations) |
+| Public MCP server | **Live** |
+| Public REST API | **Live** |
+| ChatGPT connector | **Live** (through the public MCP server); plugin directory listing in review by OpenAI |
+| Microsoft Copilot | In review |
+| Canva app | In review |
+| monday.com app | In review |
+| Google Sheets app (Google Workspace Marketplace) | In review |
+| Salesforce | In development |
+
+For the latest status, see [somerch.co/docs/integrations](https://somerch.co/docs/integrations).
+
 The documentation in this repository describes platform concepts, live API resources, webhook events, and example data structures. The complete endpoint reference for the integrations API (used by the Zapier app and custom clients) is:
 
 - [OpenAPI 3.1 specification](openapi.json)
