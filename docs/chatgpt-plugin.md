@@ -4,6 +4,10 @@ SoMerch's ChatGPT plugin connects the SoMerch public MCP server to ChatGPT so yo
 
 ## How to connect
 
+The plugin is approved and listed in the [ChatGPT plugin directory](https://chatgpt.com/plugins/plugin_asdk_app_6a84141dbb1c8191acdb877b8b846b8a), so you can add it directly from there.
+
+To connect it manually:
+
 1. Open ChatGPT and go to **Settings > Connectors > Advanced** (Developer mode).
 2. Add a new connector with the raw connector URL:
 
@@ -55,5 +59,6 @@ Personal email addresses are rejected, and repeats are idempotent by (plan, opti
 
 ## Related resources
 
+- ChatGPT plugin directory listing: https://chatgpt.com/plugins/plugin_asdk_app_6a84141dbb1c8191acdb877b8b846b8a
 - MCP server: [public-mcp.md](public-mcp.md)
 - Public docs: [somerch.co/docs/integrations](https://somerch.co/docs/integrations)

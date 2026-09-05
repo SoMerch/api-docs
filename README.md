@@ -15,7 +15,7 @@ SoMerch offers a public **MCP server** (including a **ChatGPT plugin**), a **pub
 | Resource | Endpoint | Status |
 |---|---|---|
 | Public MCP server | `somerch.co/mcp` | **Live** |
-| ChatGPT plugin (OpenAI GPT connector) | `somerch.co/mcp` | **Live** |
+| ChatGPT plugin (OpenAI GPT connector) | `somerch.co/mcp`, listed in the [ChatGPT plugin directory](https://chatgpt.com/plugins/plugin_asdk_app_6a84141dbb1c8191acdb877b8b846b8a) | **Live** |
 | MCP server card | `somerch.co/.well-known/mcp/server-card.json` | **Live** |
 | OpenAI apps domain challenge | `somerch.co/.well-known/openai-apps-challenge` | **Live** |
 | Agent skills discovery | `somerch.co/.well-known/agent-skills/` | **Live** |
@@ -33,7 +33,7 @@ SoMerch is building an integration ecosystem around the tools teams already use.
 | Zapier app | **Live** - approved and listed on the [Zapier Marketplace](https://zapier.com/apps/somerch/integrations) |
 | Public MCP server | **Live** |
 | Public REST API | **Live** |
-| ChatGPT connector | **Live** (through the public MCP server); plugin directory listing in review by OpenAI |
+| ChatGPT connector | **Live** - approved and listed in the [ChatGPT plugin directory](https://chatgpt.com/plugins/plugin_asdk_app_6a84141dbb1c8191acdb877b8b846b8a), backed by the public MCP server |
 | Microsoft Copilot | In review |
 | Canva app | In review |
 | monday.com app | In review |
